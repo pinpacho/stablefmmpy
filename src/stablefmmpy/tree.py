@@ -69,8 +69,16 @@ class QuadTree:
         self._node_counter = 0
 
     def build(self, src_pts: np.ndarray, tgt_pts: np.ndarray,
-              tau: float = 0.6, N0: int = 32) -> None:
-        """Build the quad-tree for src_pts (sources) and tgt_pts (targets)."""
+              tau: float = 0.6, N0: int = 32,
+              multilevel: bool = False) -> None:
+        """Build the quad-tree for src_pts (sources) and tgt_pts (targets).
+
+        Parameters
+        ----------
+        multilevel : bool
+            If True, use classical FMM interaction lists (M2L at every level).
+            If False (default), build leaf-only interaction lists (original behaviour).
+        """
         all_pts = np.concatenate([src_pts, tgt_pts])
         n_src = len(src_pts)
 
@@ -96,7 +104,10 @@ class QuadTree:
                         self._nodes.append(c)
                     stack.extend(children)
 
-        self._build_lists(tau)
+        if multilevel:
+            self._build_multilevel_lists(tau)
+        else:
+            self._build_lists(tau)
 
     def _new_id(self) -> int:
         self._node_counter += 1
@@ -152,6 +163,78 @@ class QuadTree:
                     node.interaction_list.append(other)
                 else:
                     node.near_list.append(other)
+
+    def _build_multilevel_lists(self, tau: float) -> None:
+        """Classical FMM interaction lists: M2L at every level, P2P only between leaves.
+
+        Node A and node B (same level) go into each other's interaction_list iff:
+          - A.is_well_separated(B) — they are far enough apart
+          - parent(A) is NOT well_separated from parent(B) — this is the coarsest
+            level where the pair first becomes well-separated (avoids double-counting).
+        Non-well-separated leaf pairs go to near_list (P2P). Interior non-well-separated
+        pairs are implicitly handled by their children at finer levels.
+
+        After the main loop, a reconciliation pass ensures that every leaf pair
+        (A_tgt, B_src) is covered by EITHER the multilevel M2L path (B or an ancestor
+        of B is in some ancestor of A's interaction_list) OR P2P (B in A.near_list).
+        This guards against adaptive trees where leaves exist at different levels and
+        some pairs are never handled by the level-by-level comparison.
+
+        Reference: [M2D] Algorithm 4.1; [HK] Algorithm 4.1.
+        """
+        by_lev = self.by_level()
+        for level in sorted(by_lev.keys()):
+            nodes = by_lev[level]
+            for node in nodes:
+                for other in nodes:
+                    if other is node:
+                        continue
+                    if node.is_well_separated(other, tau):
+                        # Classical FMM: only add if parents are NOT well-separated
+                        # (i.e., this is the finest level where the pair separates)
+                        if (node.parent is None or other.parent is None
+                                or not node.parent.is_well_separated(
+                                    other.parent, tau)):
+                            node.interaction_list.append(other)
+                        # else: handled at a coarser level — skip to avoid double-counting
+                    elif node.is_leaf() and other.is_leaf():
+                        node.near_list.append(other)
+
+        # ── Reconciliation: ensure every leaf pair is covered ─────────────────
+        # In adaptive trees, a leaf at level l may have no same-level well-separated
+        # partners (they may all be interior) and no same-level non-well-separated
+        # leaf siblings. Such leaves would be completely ignored by the multilevel
+        # FMM. Detect and route uncovered pairs to near_list (P2P fallback).
+        all_leaves = [n for n in self._nodes if n.is_leaf()]
+
+        # Build the set of interaction_list entries visible to each leaf, including
+        # those reachable via ancestors (for the L2L downward pass).
+        def _ancestors(node: 'FMMNode') -> List['FMMNode']:
+            """Return [node, parent, grandparent, ...] up to root."""
+            path: List['FMMNode'] = []
+            n = node
+            while n is not None:
+                path.append(n)
+                n = n.parent
+            return path
+
+        for tgt_leaf in all_leaves:
+            tgt_chain = _ancestors(tgt_leaf)
+            for src_leaf in all_leaves:
+                if src_leaf is tgt_leaf:
+                    continue
+                if src_leaf in tgt_leaf.near_list:
+                    continue
+                # Check if src_leaf or any ancestor is in the interaction_list
+                # of tgt_leaf or any ancestor of tgt_leaf (= covered by M2L+L2L).
+                src_chain = _ancestors(src_leaf)
+                covered = any(
+                    src_anc in tgt_anc.interaction_list
+                    for tgt_anc in tgt_chain
+                    for src_anc in src_chain
+                )
+                if not covered:
+                    tgt_leaf.near_list.append(src_leaf)
 
     def by_level(self) -> Dict[int, List[FMMNode]]:
         """Return dict mapping level -> list of nodes at that level."""

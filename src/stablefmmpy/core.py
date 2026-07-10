@@ -28,11 +28,15 @@ class PointSet:
     radius : float    — bounding radius delta_x = max|points - center|
     """
 
-    def __init__(self, points: np.ndarray, center: Optional[complex] = None):
+    def __init__(self, points: np.ndarray, center: Optional[complex] = None,
+                 radius: Optional[float] = None):
         self.points = np.asarray(points, dtype=complex).ravel()
         self.center = complex(center) if center is not None else complex(np.mean(self.points))
-        diffs = np.abs(self.points - self.center)
-        self.radius = float(np.max(diffs)) if len(diffs) > 0 else 0.0
+        if radius is not None:
+            self.radius = float(radius)
+        else:
+            diffs = np.abs(self.points - self.center)
+            self.radius = float(np.max(diffs)) if len(diffs) > 0 else 0.0
 
     @classmethod
     def random_uniform(cls, n: int, center: complex = 0+0j,
