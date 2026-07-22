@@ -20,8 +20,7 @@ The classical FMM is numerically unstable in the low-frequency regime (k·δ ≪
 ## Installation
 
 ```bash
-cd stablefmmpy
-pip install -e .
+pip install stablefmmpy
 ```
 
 Requires Python 3.12+, numpy, scipy, matplotlib (all standard scientific Python).
