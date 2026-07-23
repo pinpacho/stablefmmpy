@@ -2,11 +2,10 @@
 
 A stable Python implementation of the wideband Fast Multipole Method (FMM) for the 2D Helmholtz kernel and related 2D kernels (generalised Cauchy, logarithmic), based on:
 
-> **[HK]** "A Stable Matrix Version of the Wideband FMM for the 2D Helmholtz Kernel"  
-> Michelle, Ou, Xia — preprint 2024
+> **[HK]** Michelle, M., Ou, X., & Xia, J. (2026). *A Stable Matrix Version of the Wideband Fast Multipole Method for the 2D Helmholtz Kernel*. *SIAM Journal on Scientific Computing, 48*(3), A1399–A1429. https://doi.org/10.1137/24M1712837
 
-> **[M2D]** "A Stable Matrix Version of the 2D Fast Multipole Method"  
-> Ou, Michelle, Xia — SIAM J. Matrix Anal. Appl. 46(1), 2025
+> **[M2D]** Ou, X., Michelle, M., & Xia, J. (2025). *A Stable Matrix Version of the 2D Fast Multipole Method*. *SIAM Journal on Matrix Analysis and Applications, 46*(1), 530–560. https://doi.org/10.1137/23M1624580
+
 
 ## Why this library?
 
@@ -181,20 +180,7 @@ from stablefmmpy import (
 
 ## Citation
 
-```bibtex
-@article{michelle2024helmholtz,
-  title={A Stable Matrix Version of the Wideband {FMM} for the 2D {Helmholtz} Kernel},
-  author={Michelle, Ou, Xia},
-  year={2024},
-  note={preprint}
-}
+1. Michelle, M., Ou, X., & Xia, J. (2026). *A stable matrix version of the wideband fast multipole method for the 2D Helmholtz kernel*. *SIAM Journal on Scientific Computing, 48*(3), A1399–A1429. https://doi.org/10.1137/24M1712837
 
-@article{ou2025multipole2d,
-  title={A Stable Matrix Version of the 2D Fast Multipole Method},
-  author={Ou, Michelle, Xia},
-  journal={SIAM Journal on Matrix Analysis and Applications},
-  volume={46},
-  number={1},
-  year={2025}
-}
-```
+2. Ou, X., Michelle, M., & Xia, J. (2025). *A stable matrix version of the 2D fast multipole method*. *SIAM Journal on Matrix Analysis and Applications, 46*(1), 530–560. https://doi.org/10.1137/23M1624580
+
